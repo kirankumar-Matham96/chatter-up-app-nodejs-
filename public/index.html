@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatter Up</title>
+    <link rel="stylesheet" href="./index.css" />
+  </head>
+  <body>
+    <div class="bg-container">
+      <header class="header">
+        <h1>Chatter Up</h1>
+        <h4>Create Room and chat with friends together</h4>
+        <div id="welcome-message">
+          <!-- here goes welcome message -->
+        </div>
+      </header>
+      <section class="chat-container">
+        <ul class="messages-container">
+          <!-- messages goes here -->
+        </ul>
+      </section>
+      <section class="form-container">
+        <form id="chat-form">
+          <input type="text" id="input" />
+          <button class="send-btn" type="submit">Send</button>
+        </form>
+      </section>
+    </div>
+    <!-- importing socket -->
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script>
+      // connecting to socket
+      const socket = io.connect("http://localhost:3000/");
+
+      // elements
+      const welcomeMessageEl = document.querySelector("#welcome-message");
+      const messageContainerEl = document.querySelector(".messages-container");
+      const formEl = document.querySelector("#chat-form");
+      const inputEl = document.querySelector("#input");
+
+      // variables
+      let userName = "";
+      let message = "";
+
+      // on document load
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("Dom loaded");
+        // taking user name
+        userName = prompt("Please enter your name!");
+
+        // emitting user join event
+        socket.emit("join", userName);
+
+        // listening for the welcome event
+        socket.on("welcome", (data) => {
+          const { message, chatHistory } = data;
+
+          // append message to element
+          welcomeMessageEl.innerHTML = "<h4>" + message + "</h4>";
+
+          // append chat history to the chat container
+          // chatHistory.map((message) => {
+          //   // create element
+          //   const messageEl = document.createElement("li");
+
+          //   // add content to the element
+          //   messageEl.textContent = message;
+
+          //   // add stylings
+          //   messageEl.classList.add("message-thread");
+
+          //   // keep user messages to the right by userName condition
+          //   if(){
+          //     messageEl.classList.add("self-message");
+          //   }
+
+          //   // append it to parent container
+          // messageContainerEl.appendChild();
+
+          // });
+        });
+      });
+
+      // on message
+      formEl.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        // set message
+        if (inputEl.value) {
+          message = inputEl.value;
+        }
+
+        // emit messageSend event
+        socket.emit("messageSend", { userName, message });
+
+        // clearing the input
+        inputEl.value = "";
+      });
+
+      socket.on("message", (messageData) => {
+        // create element
+        const messageEl = document.createElement("li");
+        // add content to the element
+        messageEl.innerHTML = `<strong>${messageData.userName}</strong>: ${messageData.message}`;
+        // add stylings
+        messageEl.classList.add("message-thread");
+        // keep user messages to the right by userName condition
+        // if(){
+        //   messageEl.classList.add("self-message");
+        // }
+        // append it to parent container
+        messageContainerEl.appendChild(messageEl);
+      });
+    </script>
+  </body>
+</html>
