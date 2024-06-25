@@ -41,6 +41,9 @@ io.on("connection", (socket) => {
 
       // sending welcome message with chat history
       socket.emit("welcome", { message: `Welcome ${userName}!`, chatHistory });
+      
+      // notifying the other users
+      io.emit("newMember", userName);
     } catch (error) {
       console.log(error);
     }
@@ -53,6 +56,7 @@ io.on("connection", (socket) => {
       const newMessage = new chatModel({
         userName: data.userName,
         message: data.message,
+        profilePicUrl: `https://api.multiavatar.com/${data.userName}.svg`,
         timestamp: new Date(),
       });
       await newMessage.save();
