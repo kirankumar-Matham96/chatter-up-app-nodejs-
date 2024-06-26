@@ -30,20 +30,26 @@ const io = new Server(server, {
   },
 });
 
+const connectedUsers = [];
+
 // listening for connection
 io.on("connection", (socket) => {
   console.log("Socket connected...");
   // listening for user joining
   socket.on("join", async (userName) => {
     try {
+      socket.userName = userName;
+      if (!connectedUsers.includes(userName)) {
+        connectedUsers.push(userName);
+      }
       // getting chat history from db
       const chatHistory = await chatModel.find().sort({ timestamp: 1 });
 
       // sending welcome message with chat history
       socket.emit("welcome", { message: `Welcome ${userName}!`, chatHistory });
-      
+
       // notifying the other users
-      io.emit("newMember", userName);
+      io.emit("newMember", { newUser: userName, connectedUsers });
     } catch (error) {
       console.log(error);
     }
@@ -68,12 +74,23 @@ io.on("connection", (socket) => {
       console.log(error);
     }
   });
-});
 
-// app.get("/", (req, res) => {
-//   console.log(io);
-//   res.send("welcome");
-// });
+  // disconnecting user
+  socket.on("disconnect", () => {
+    const userIndex = connectedUsers.findIndex(
+      (user) => user === socket.userName
+    );
+    if (userIndex != -1) {
+      connectedUsers.splice(userIndex, 1);
+    }
+
+    io.emit("userLeft", { user: socket.userName, connectedUsers });
+  });
+
+  socket.on("typing", (user) => {
+    io.emit("user-typing", user);
+  });
+});
 
 // listening to server
 server.listen(3000, () => {
